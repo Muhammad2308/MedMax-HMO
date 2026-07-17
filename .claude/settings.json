@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('date-fns'\\); console.log\\('ok'\\)\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\Administrator\\\\Desktop\\\\IX2 HMO\\\\src\\\\app\\\\onboard\\\\[token]\")",
+      "Bash(npx tsc *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(findstr \":3000 \\\\|:3001 \\\\|:3002 \\\\|:8000 \\\\|:8001 \\\\|:8080 \")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Administrator\\Desktop\\IX2 HMO\\src\\app\\onboard"
+    ]
+  }
+}
