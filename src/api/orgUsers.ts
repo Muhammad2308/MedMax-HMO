@@ -44,3 +44,12 @@ export const getUserPermissions = (userId: number) =>
   apiClient.get<{ permissions: Permission[]; is_org_admin: boolean }>(
     `/hmo/org/users/${userId}/permissions`
   );
+
+export const suspendOrgUser = (userId: number) =>
+  apiClient.post<{ message: string; user: AuthUser }>(`/hmo/org/users/${userId}/suspend`);
+
+export const blockOrgUser = (userId: number) =>
+  apiClient.post<{ message: string; user: AuthUser }>(`/hmo/org/users/${userId}/block`);
+
+export const activateOrgUser = (userId: number) =>
+  apiClient.post<{ message: string; user: AuthUser }>(`/hmo/org/users/${userId}/activate`);

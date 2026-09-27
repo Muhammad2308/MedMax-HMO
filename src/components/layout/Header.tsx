@@ -78,7 +78,7 @@ export const Header = ({ title, subtitle, pendingCount = 0, onRefresh }: HeaderP
                         {title}
                     </h1>
                     <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px', fontWeight: 500 }}>
-                        {subtitle || 'IX2 Health Management Platform'}
+                        {subtitle || 'MEDiX Health Management Platform'}
                     </p>
                 </div>
             </div>

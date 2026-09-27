@@ -2,10 +2,22 @@ import React from 'react';
 
 type StatusType = 0 | 1 | 2 | 3 | 9;
 
+/**
+ * Semantic status vocabulary per plan §18 ("Status System") — a consistent
+ * visual language across the app instead of ad hoc color choices per page.
+ * Color is always paired with a label (never color alone), per the same rule.
+ */
+export type StatusLabel =
+    | 'Active' | 'Inactive' | 'Pending' | 'Verified' | 'Suspended'
+    | 'Approved' | 'Rejected' | 'Queried' | 'Processing' | 'Completed'
+    | 'Failed' | 'Paid' | 'Unpaid' | 'Expired';
+
 interface BadgeProps {
     children: React.ReactNode;
     variant?: 'default' | 'success' | 'danger' | 'warning' | 'purple' | 'cyan';
     status?: StatusType;
+    /** Semantic status string — takes precedence over `status`/`variant` when set. */
+    label?: StatusLabel;
     dot?: boolean;
     className?: string;
 }
@@ -27,8 +39,27 @@ const VARIANT_MAP: Record<string, { bg: string; color: string; dot: string }> = 
     cyan:    { bg: 'rgba(6,182,212,0.15)',   color: '#22d3ee', dot: '#06b6d4' },
 };
 
-export const Badge = ({ children, variant, status, dot = false, className = '' }: BadgeProps) => {
-    const config = status !== undefined
+const STATUS_LABEL_MAP: Record<StatusLabel, { bg: string; color: string; dot: string }> = {
+    Active:     VARIANT_MAP.cyan,
+    Verified:   VARIANT_MAP.success,
+    Approved:   VARIANT_MAP.success,
+    Completed:  VARIANT_MAP.success,
+    Paid:       VARIANT_MAP.success,
+    Pending:    VARIANT_MAP.default,
+    Processing: VARIANT_MAP.cyan,
+    Queried:    VARIANT_MAP.warning,
+    Unpaid:     VARIANT_MAP.warning,
+    Inactive:   VARIANT_MAP.default,
+    Suspended:  VARIANT_MAP.warning,
+    Rejected:   VARIANT_MAP.danger,
+    Failed:     VARIANT_MAP.danger,
+    Expired:    VARIANT_MAP.danger,
+};
+
+export const Badge = ({ children, variant, status, label, dot = false, className = '' }: BadgeProps) => {
+    const config = label
+        ? STATUS_LABEL_MAP[label]
+        : status !== undefined
         ? STATUS_MAP[status] ?? STATUS_MAP[0]
         : VARIANT_MAP[variant || 'default'];
 

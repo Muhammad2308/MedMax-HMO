@@ -7,11 +7,16 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { enrolleesApi } from '@/api/enrollees';
-import { Search, UserPlus, Filter, Download, MoreVertical, Camera, Image as ImageIcon } from 'lucide-react';
+import { Search, UserPlus, Filter, Download, Upload, MoreVertical, Camera, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { ImportEnrolleesModal } from './ImportEnrolleesModal';
 
 export default function EnrolleesPage() {
     const [search, setSearch] = useState('');
+    const [showImport, setShowImport] = useState(false);
+    const { user, hasOrgPermission } = useAuth();
+    const canImport = !!user?.is_org_admin || hasOrgPermission('operations_access');
 
     const { data: enrollees, isLoading } = useQuery({
         queryKey: ['enrollees', { search }],
@@ -33,6 +38,11 @@ export default function EnrolleesPage() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto">
+                    {canImport && (
+                        <Button variant="secondary" className="flex-1 md:flex-none" onClick={() => setShowImport(true)}>
+                            <Upload size={18} className="mr-2" /> Import
+                        </Button>
+                    )}
                     <Button variant="secondary" className="flex-1 md:flex-none">
                         <Download size={18} className="mr-2" /> Export
                     </Button>
@@ -120,6 +130,8 @@ export default function EnrolleesPage() {
                     </table>
                 </div>
             </Card>
+
+            {showImport && <ImportEnrolleesModal onClose={() => setShowImport(false)} />}
         </div>
     );
 }

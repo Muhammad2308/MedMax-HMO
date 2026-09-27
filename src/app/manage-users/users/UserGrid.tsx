@@ -48,8 +48,8 @@ export function UserGrid() {
   const canCreate = me?.is_org_admin || hasOrgPermission('create_users');
 
   const totalAdmins = users.filter((u) => u.is_org_admin).length;
-  const totalActive = users.filter((u) => u.is_approved).length;
-  const totalSuspended = users.filter((u) => !u.is_approved).length;
+  const totalActive = users.filter((u) => (u.status ?? (u.is_approved ? 'active' : 'suspended')) === 'active').length;
+  const totalSuspended = users.filter((u) => (u.status ?? (u.is_approved ? 'active' : 'suspended')) !== 'active').length;
 
   return (
     <div>

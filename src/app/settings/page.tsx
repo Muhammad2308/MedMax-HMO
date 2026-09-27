@@ -34,20 +34,20 @@ export default function SettingsPage() {
                                     <span className="text-[10px] text-slate-500 font-bold mt-1">Logo</span>
                                 </div>
                                 <div className="flex-1 space-y-1">
-                                    <h3 className="text-lg font-bold text-white">IX2 Health Limited</h3>
+                                    <h3 className="text-lg font-bold text-white">CYBERNET MEDiX</h3>
                                     <p className="text-sm text-slate-500 italic">Registered in Nigeria (RC-998122)</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Input label="Organisation Name" defaultValue="IX2 Health Limited" />
-                                <Input label="HMO Short Code" defaultValue="IX2-HMO" readOnly className="bg-white/5" />
-                                <Input label="Official Email" leftIcon={<Mail size={16} />} defaultValue="ops@ix2health.com" />
+                                <Input label="Organisation Name" defaultValue="CYBERNET MEDiX" />
+                                <Input label="HMO Short Code" defaultValue="MDX-HMO" readOnly className="bg-white/5" />
+                                <Input label="Official Email" leftIcon={<Mail size={16} />} defaultValue="ops@cybernetsystems.ng" />
                                 <Input label="Support Phone" leftIcon={<Phone size={16} />} defaultValue="+234 812 123 4567" />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Input label="Website" leftIcon={<Globe size={16} />} defaultValue="https://ix2health.com" />
+                                <Input label="Website" leftIcon={<Globe size={16} />} defaultValue="https://cybernetsystems.ng" />
                                 <Input label="VAT Number" defaultValue="VAT-992-123" />
                             </div>
 

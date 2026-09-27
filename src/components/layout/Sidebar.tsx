@@ -32,15 +32,55 @@ function NavContent({
   const canAccessReports = !user || user.is_org_admin || hasOrgPermission('accounts_access');
   const canManageUsers = !user || user.is_org_admin || hasOrgPermission('manage_users');
 
-  const MENU_ITEMS = [
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/', show: true },
-    { label: 'Call Center', icon: PhoneCall, href: '/call-center', show: canAccessCallCenter },
-    { label: 'Manage Codes', icon: QrCode, href: '/manage-codes', show: canAccessCodes },
-    { label: 'Enrollees', icon: Users, href: '/enrollees', show: true },
-    { label: 'Billing', icon: CreditCard, href: '/billing', show: canAccessBilling },
-    { label: 'Providers', icon: Building2, href: '/marketing/providers', show: true },
-    { label: 'Intelligence', icon: BarChart3, href: '/reports', show: canAccessReports },
-    { label: 'Manage Users', icon: UserCog, href: '/manage-users', show: canManageUsers },
+  // Grouped per the MedMax UI/UX plan (§9.3 Navigation groups). Only routes
+  // that already exist and work are listed here — see
+  // docs/MEDMAX_HMO_IMPLEMENTATION_PLAN.md §3 item 7 for why unbuilt modules
+  // (Dependants, Tariffs, Accounts sub-pages, Administration extras, etc.)
+  // are intentionally left out rather than linked as dead pages.
+  const MENU_GROUPS: { label: string; items: { label: string; icon: typeof LayoutDashboard; href: string; show: boolean }[] }[] = [
+    {
+      label: 'Overview',
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/', show: true },
+      ],
+    },
+    {
+      label: 'Beneficiaries',
+      items: [
+        { label: 'Enrollees', icon: Users, href: '/enrollees', show: true },
+      ],
+    },
+    {
+      label: 'Network',
+      items: [
+        { label: 'Providers', icon: Building2, href: '/marketing/providers', show: true },
+      ],
+    },
+    {
+      label: 'Call Center',
+      items: [
+        { label: 'Call Center', icon: PhoneCall, href: '/call-center', show: canAccessCallCenter },
+        { label: 'P-Code Requests', icon: QrCode, href: '/manage-codes', show: canAccessCodes },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        { label: 'Billing Review', icon: CreditCard, href: '/billing', show: canAccessBilling },
+      ],
+    },
+    {
+      label: 'Reports',
+      items: [
+        { label: 'Intelligence', icon: BarChart3, href: '/reports', show: canAccessReports },
+      ],
+    },
+    {
+      label: 'Administration',
+      items: [
+        { label: 'Manage Users', icon: UserCog, href: '/manage-users', show: canManageUsers },
+      ],
+    },
   ];
 
   const BOTTOM_ITEMS = [
@@ -63,10 +103,10 @@ function NavContent({
       <div style={{ padding: '24px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 20px rgba(6,182,212,0.3)' }}>
-            <Image src="/logo.png" alt="MEDX Logo" width={38} height={38} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <Image src="/logo.png" alt="MEDiX Logo" width={38} height={38} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#f1f5f9', lineHeight: 1.1 }}>MEDX</div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#f1f5f9', lineHeight: 1.1 }}>MEDiX</div>
             <div style={{ fontSize: '0.65rem', color: '#475569', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' }}>HMO Portal</div>
           </div>
         </div>
@@ -77,22 +117,29 @@ function NavContent({
         )}
       </div>
 
-      <div style={{ padding: '4px 20px 8px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#334155' }}>
-        Navigation
-      </div>
-
-      <nav style={{ flex: 1, padding: '0 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {MENU_ITEMS.filter((item) => item.show).map((item) => {
-          const active = isActive(item.href);
+      <nav style={{ flex: 1, padding: '0 12px 8px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {MENU_GROUPS.map((group) => {
+          const visibleItems = group.items.filter((item) => item.show);
+          if (visibleItems.length === 0) return null;
           return (
-            <Link key={item.href} href={item.href} onClick={onClose} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)', background: active ? 'linear-gradient(90deg,rgba(6,182,212,0.12),rgba(6,182,212,0.04))' : 'transparent', color: active ? '#06b6d4' : '#64748b', fontWeight: active ? 600 : 500, fontSize: '0.875rem', border: active ? '1px solid rgba(6,182,212,0.2)' : '1px solid transparent' }}
-              onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#cbd5e1'; } }}
-              onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#64748b'; } }}
-            >
-              {active && <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: '60%', background: '#06b6d4', borderRadius: '0 4px 4px 0', boxShadow: '0 0 8px #06b6d4' }} />}
-              <item.icon size={18} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0, filter: active ? 'drop-shadow(0 0 5px rgba(6,182,212,0.5))' : 'none' }} />
-              <span>{item.label}</span>
-            </Link>
+            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ padding: '10px 12px 4px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#334155' }}>
+                {group.label}
+              </div>
+              {visibleItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href} onClick={onClose} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)', background: active ? 'linear-gradient(90deg,rgba(6,182,212,0.12),rgba(6,182,212,0.04))' : 'transparent', color: active ? '#06b6d4' : '#64748b', fontWeight: active ? 600 : 500, fontSize: '0.875rem', border: active ? '1px solid rgba(6,182,212,0.2)' : '1px solid transparent' }}
+                    onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#cbd5e1'; } }}
+                    onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#64748b'; } }}
+                  >
+                    {active && <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: '60%', background: '#06b6d4', borderRadius: '0 4px 4px 0', boxShadow: '0 0 8px #06b6d4' }} />}
+                    <item.icon size={18} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0, filter: active ? 'drop-shadow(0 0 5px rgba(6,182,212,0.5))' : 'none' }} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           );
         })}
       </nav>

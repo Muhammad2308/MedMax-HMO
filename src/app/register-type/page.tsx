@@ -39,7 +39,7 @@ export default function RegisterTypePage() {
               <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg, #06b6d4 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(6,182,212,0.3)' }}>
                 <Activity size={20} color="#fff" strokeWidth={2.5} />
               </div>
-              <span style={{ fontSize: '1rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>IX2 HMO Portal</span>
+              <span style={{ fontSize: '1rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>MEDiX HMO Portal</span>
             </div>
           </div>
 
@@ -49,7 +49,7 @@ export default function RegisterTypePage() {
               Staff Registration
             </h2>
             <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.55 }}>
-              IX2 HMO Portal is exclusively for HMO staff and organisations. Continue to activate your account with your SMS token.
+              MEDiX HMO Portal is exclusively for HMO staff and organisations. Continue to activate your account with your SMS token.
             </p>
           </div>
 

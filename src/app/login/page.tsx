@@ -30,10 +30,14 @@ export default function LoginPage() {
       setTokenAndUser(res.data.token, res.data.user);
       router.replace('/');
     } catch (err: unknown) {
-      const ax = err as { response?: { status?: number; data?: { errors?: Record<string, string[]> } } };
+      const ax = err as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } };
       if (ax.response?.status === 401) {
         setError('email', { message: 'Invalid email or password' });
         setError('password', { message: ' ' });
+      } else if (ax.response?.status === 403) {
+        setError('email', { message: ax.response.data?.message || 'Your account is pending approval or has been suspended.' });
+      } else if (!ax.response) {
+        setError('email', { message: 'Cannot reach the server. Check that the backend is running.' });
       } else if (ax.response?.status === 422) {
         const errs = ax.response.data?.errors ?? {};
         if (errs.email) setError('email', { message: errs.email[0] });
@@ -141,7 +145,7 @@ export default function LoginPage() {
             {/* Logo — screen blend dissolves its dark bg into the card */}
             <Image
               src="/logo.png"
-              alt="MEDX Portal"
+              alt="MEDiX Portal"
               width={130}
               height={130}
               priority
@@ -226,7 +230,7 @@ export default function LoginPage() {
           </form>
 
           <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>
-            © 2026 IX2 Health Systems · All rights reserved
+            © 2026 CYBERNET MEDiX · All rights reserved
           </p>
         </div>
       </div>

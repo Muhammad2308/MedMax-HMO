@@ -1,27 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { UserPlus, LogIn, Check, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Building2, KeyRound, LogIn, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-
-type Choice = 'register' | 'login' | null;
 
 export default function LandingPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [choice, setChoice] = useState<Choice>(null);
 
   useEffect(() => {
     if (user) router.replace('/');
   }, [user, router]);
-
-  const onContinue = () => {
-    if (choice === 'register') router.push('/staff-token');
-    if (choice === 'login') router.push('/login');
-  };
 
   return (
     <>
@@ -67,7 +58,7 @@ export default function LandingPage() {
               <div style={{ position: 'absolute', inset: -28, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.22) 0%, transparent 68%)', animation: 'glow-pulse 3.5s ease-in-out infinite', pointerEvents: 'none' }} />
               <Image
                 src="/logo.png"
-                alt="MEDX"
+                alt="MEDiX"
                 width={112}
                 height={112}
                 priority
@@ -87,7 +78,7 @@ export default function LandingPage() {
               marginBottom: 8,
               textAlign: 'center',
             }}>
-              IX2 HMO Portal
+              MEDiX HMO Portal
             </h1>
             <p style={{ fontSize: '0.97rem', color: '#475569', fontWeight: 500, letterSpacing: '0.01em' }}>
               HMO Administration &amp; Intelligence
@@ -99,40 +90,71 @@ export default function LandingPage() {
             How can we help you today?
           </p>
 
-          {/* ── Choice cards ──────────────────────────────── */}
-          <div className="lp-grid">
-            <RadioCard
-              icon={<UserPlus size={26} />}
-              label="Register"
-              sublabel="New staff account"
-              desc="Set up your HMO staff or organisation account using your activation token."
-              selected={choice === 'register'}
-              onClick={() => setChoice('register')}
-            />
-            <RadioCard
-              icon={<LogIn size={26} />}
-              label="Sign In"
-              sublabel="Existing account"
-              desc="Already activated? Sign in to access your HMO management dashboard."
-              selected={choice === 'login'}
-              onClick={() => setChoice('login')}
-            />
+          {/* ── Primary path: register a new HMO ─────────────── */}
+          <button
+            type="button"
+            className="lp-card"
+            onClick={() => router.push('/onboarding')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 20,
+              padding: '26px 24px',
+              borderRadius: 22,
+              background: 'rgba(6,182,212,0.09)',
+              border: '1.5px solid rgba(6,182,212,0.4)',
+              boxShadow: '0 0 0 1px rgba(6,182,212,0.14) inset, 0 12px 40px rgba(6,182,212,0.12)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              marginBottom: 18,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6,182,212,0.6)'; (e.currentTarget as HTMLElement).style.background = 'rgba(6,182,212,0.13)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6,182,212,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(6,182,212,0.09)'; }}
+          >
+            <div style={{ width: 58, height: 58, borderRadius: 18, background: 'rgba(6,182,212,0.16)', border: '1px solid rgba(6,182,212,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06b6d4', flexShrink: 0, boxShadow: '0 0 18px rgba(6,182,212,0.25)' }}>
+              <Building2 size={26} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.03em', marginBottom: 3 }}>
+                Register a New HMO
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#06b6d4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                New organisation
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#64748b', lineHeight: 1.5 }}>
+                Set up your HMO and administrator account in a few steps.
+              </div>
+            </div>
+            <ArrowRight size={20} style={{ color: '#06b6d4', flexShrink: 0 }} />
+          </button>
+
+          {/* ── Divider ───────────────────────────────────── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ fontSize: '0.7rem', color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
           </div>
 
-          {/* ── Continue ──────────────────────────────────── */}
-          <div style={{
-            transition: 'opacity 220ms ease, transform 220ms ease',
-            opacity: choice ? 1 : 0,
-            transform: choice ? 'translateY(0)' : 'translateY(10px)',
-            pointerEvents: choice ? 'auto' : 'none',
-          }}>
-            <Button size="lg" onClick={onContinue} style={{ width: '100%', gap: 10, fontSize: '1rem', padding: '16px 28px' }}>
-              Continue <ArrowRight size={20} />
-            </Button>
+          {/* ── Secondary paths ───────────────────────────── */}
+          <div className="lp-grid" style={{ marginBottom: 0 }}>
+            <SecondaryOption
+              icon={<KeyRound size={20} />}
+              label="I Have an Activation Token"
+              desc="Joining an HMO that's already on MEDiX? Activate your staff account."
+              onClick={() => router.push('/register-type')}
+            />
+            <SecondaryOption
+              icon={<LogIn size={20} />}
+              label="Sign In"
+              desc="Already activated? Sign in to your dashboard."
+              onClick={() => router.push('/login')}
+            />
           </div>
 
           <p style={{ marginTop: 28, textAlign: 'center', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>
-            © 2026 IX2 Health Systems · All rights reserved
+            © 2026 CYBERNET MEDiX · All rights reserved
           </p>
         </div>
       </div>
@@ -140,14 +162,12 @@ export default function LandingPage() {
   );
 }
 
-function RadioCard({
-  icon, label, sublabel, desc, selected, onClick,
+function SecondaryOption({
+  icon, label, desc, onClick,
 }: {
   icon: React.ReactNode;
   label: string;
-  sublabel: string;
   desc: string;
-  selected: boolean;
   onClick: () => void;
 }) {
   return (
@@ -156,66 +176,44 @@ function RadioCard({
       className="lp-card"
       onClick={onClick}
       style={{
-        background: selected ? 'rgba(6,182,212,0.09)' : 'rgba(255,255,255,0.04)',
-        border: `1.5px solid ${selected ? 'rgba(6,182,212,0.55)' : 'rgba(255,255,255,0.09)'}`,
-        boxShadow: selected
-          ? '0 0 0 1px rgba(6,182,212,0.18) inset, 0 12px 40px rgba(6,182,212,0.1)'
-          : '0 4px 20px rgba(0,0,0,0.25)',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1.5px solid rgba(255,255,255,0.09)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
         borderRadius: 22,
-        padding: '28px 24px',
+        padding: '22px 20px',
         cursor: 'pointer',
         textAlign: 'left',
         display: 'flex',
         flexDirection: 'column',
-        gap: 18,
+        gap: 14,
         fontFamily: 'inherit',
-        position: 'relative',
         width: '100%',
       }}
       onMouseEnter={(e) => {
-        if (!selected) {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
-        }
+        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
       }}
       onMouseLeave={(e) => {
-        if (!selected) {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-        }
+        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
+        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
       }}
     >
-      {/* Selected tick */}
-      {selected && (
-        <div style={{ position: 'absolute', top: 14, right: 14, width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg,#06b6d4,#0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 12px rgba(6,182,212,0.55)' }}>
-          <Check size={13} color="#fff" strokeWidth={3} />
-        </div>
-      )}
-
-      {/* Icon container */}
       <div className="lp-icon-wrap" style={{
-        width: 58, height: 58,
-        borderRadius: 18,
-        background: selected ? 'rgba(6,182,212,0.14)' : 'rgba(255,255,255,0.06)',
-        border: `1px solid ${selected ? 'rgba(6,182,212,0.32)' : 'rgba(255,255,255,0.08)'}`,
+        width: 44, height: 44,
+        borderRadius: 14,
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: selected ? '#06b6d4' : 'rgba(255,255,255,0.28)',
-        boxShadow: selected ? '0 0 16px rgba(6,182,212,0.2)' : 'none',
-        transition: 'all 200ms ease',
+        color: 'rgba(255,255,255,0.5)',
         flexShrink: 0,
       }}>
         {icon}
       </div>
-
-      {/* Text */}
       <div className="lp-card-body">
-        <div style={{ fontSize: '1.15rem', fontWeight: 900, color: selected ? '#f1f5f9' : '#64748b', letterSpacing: '-0.03em', marginBottom: 3, transition: 'color 200ms ease' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#cbd5e1', letterSpacing: '-0.02em', marginBottom: 4 }}>
           {label}
         </div>
-        <div style={{ fontSize: '0.7rem', color: selected ? '#06b6d4' : '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8, transition: 'color 200ms ease' }}>
-          {sublabel}
-        </div>
-        <div style={{ fontSize: '0.84rem', color: selected ? '#64748b' : '#334155', lineHeight: 1.55, transition: 'color 200ms ease' }}>
+        <div style={{ fontSize: '0.76rem', color: '#334155', lineHeight: 1.5 }}>
           {desc}
         </div>
       </div>

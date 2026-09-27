@@ -1,5 +1,5 @@
 /* ============================================================
-   MEDX HMO Portal — Design System Tokens
+   MEDiX HMO Portal — Design System Tokens
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -1264,6 +1264,10 @@ a {
     width: 40%;
   }
 
+  .md\:w-auto {
+    width: auto;
+  }
+
   .md\:flex-none {
     flex: none;
   }
@@ -1295,11 +1299,45 @@ a {
   .md\:table-cell {
     display: table-cell !important;
   }
+
+  .md\:items-center {
+    align-items: center;
+  }
+
+  .md\:w-64 {
+    width: 16rem;
+  }
+
+  .md\:w-32 {
+    width: 8rem;
+  }
+
+  .md\:bottom-8 {
+    bottom: 2rem;
+  }
+
+  .md\:max-w-2xl {
+    max-width: 42rem;
+  }
+
+  .md\:max-w-4xl {
+    max-width: 56rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .sm\:table-cell {
+    display: table-cell !important;
+  }
 }
 
 @media (min-width: 1024px) {
   .lg\:flex {
     display: flex;
+  }
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .lg\:grid-cols-3 {
@@ -1310,12 +1348,24 @@ a {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .lg\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .lg\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+
   .lg\:col-span-2 {
     grid-column: span 2 / span 2;
   }
 
   .lg\:col-span-3 {
     grid-column: span 3 / span 3;
+  }
+
+  .lg\:table-cell {
+    display: table-cell !important;
   }
 }
 

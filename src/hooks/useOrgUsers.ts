@@ -7,6 +7,9 @@ import {
   assignUserRoles,
   revokeUserRoles,
   getUserPermissions,
+  suspendOrgUser,
+  blockOrgUser,
+  activateOrgUser,
   type CreateUserPayload,
   type UpdateUserPayload,
 } from '@/api/orgUsers';
@@ -65,6 +68,30 @@ export function useRevokeUserRoles() {
   return useMutation({
     mutationFn: ({ userId, role_ids }: { userId: number; role_ids: number[] }) =>
       revokeUserRoles(userId, role_ids).then((r) => r.data.user),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hmo-users'] }),
+  });
+}
+
+export function useSuspendUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => suspendOrgUser(userId).then((r) => r.data.user),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hmo-users'] }),
+  });
+}
+
+export function useBlockUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => blockOrgUser(userId).then((r) => r.data.user),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hmo-users'] }),
+  });
+}
+
+export function useActivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => activateOrgUser(userId).then((r) => r.data.user),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['hmo-users'] }),
   });
 }

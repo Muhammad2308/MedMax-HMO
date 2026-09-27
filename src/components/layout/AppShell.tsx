@@ -16,6 +16,7 @@ const AUTH_ROUTES = [
   '/hmo-org-complete',
   '/onboarding',
   '/onboard',
+  '/staff-invite',
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

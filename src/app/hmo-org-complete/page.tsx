@@ -114,7 +114,7 @@ function HmoOrgCompleteContent() {
         <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
           <CheckCircle2 size={40} color="#10b981" />
         </div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f1f5f9', marginBottom: 8 }}>Welcome to IX2!</h2>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f1f5f9', marginBottom: 8 }}>Welcome to MEDiX!</h2>
         <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Your organisation is ready. Redirecting to dashboard…</p>
         <div style={{ marginTop: 24, height: 3, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
           <div style={{ height: '100%', background: 'linear-gradient(90deg,#06b6d4,#10b981)', animation: 'progress-fill 2.5s linear both', borderRadius: 99 }} />
@@ -133,7 +133,7 @@ function HmoOrgCompleteContent() {
           <Activity size={22} color="#fff" strokeWidth={2.5} />
         </div>
         <div>
-          <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.04em' }}>IX2 HMO Portal</div>
+          <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.04em' }}>MEDiX HMO Portal</div>
           <div style={{ fontSize: '0.72rem', color: '#475569' }}>Complete your admin account setup</div>
         </div>
       </div>

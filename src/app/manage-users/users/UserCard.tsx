@@ -25,6 +25,12 @@ function initials(name: string): string {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
+const STATUS_COLORS: Record<AuthUser['status'], { label: string; bg: string; border: string; text: string }> = {
+  active:    { label: 'Active',    bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', text: '#10b981' },
+  suspended: { label: 'Suspended', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+  blocked:   { label: 'Blocked',   bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)',  text: '#ef4444' },
+};
+
 interface Props {
   user: AuthUser;
   onView: () => void;
@@ -34,6 +40,7 @@ interface Props {
 }
 
 export function UserCard({ user, onView, onEdit, onManageRoles, onRemove }: Props) {
+  const status = user.status ?? (user.is_approved ? 'active' : 'suspended');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -103,8 +110,8 @@ export function UserCard({ user, onView, onEdit, onManageRoles, onRemove }: Prop
               {r.title}
             </span>
           ))}
-          <span style={{ padding: '2px 10px', borderRadius: 99, background: user.is_approved ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${user.is_approved ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`, color: user.is_approved ? '#10b981' : '#ef4444', fontSize: '0.7rem', fontWeight: 600 }}>
-            {user.is_approved ? 'Active' : 'Suspended'}
+          <span style={{ padding: '2px 10px', borderRadius: 99, background: STATUS_COLORS[status].bg, border: `1px solid ${STATUS_COLORS[status].border}`, color: STATUS_COLORS[status].text, fontSize: '0.7rem', fontWeight: 600 }}>
+            {STATUS_COLORS[status].label}
           </span>
         </div>
       </div>

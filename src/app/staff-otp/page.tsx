@@ -129,7 +129,7 @@ function StaffOtpContent() {
           <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg, #06b6d4 0%, #818cf8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Activity size={18} color="#fff" strokeWidth={2.5} />
           </div>
-          <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>IX2 HMO Portal</span>
+          <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>MEDiX HMO Portal</span>
         </div>
 
         <div style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 24, padding: '36px 32px', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', position: 'relative' }}>

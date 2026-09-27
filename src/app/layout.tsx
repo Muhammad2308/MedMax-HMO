@@ -7,7 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MEDX HMO Portal",
+  title: "MEDiX HMO Portal",
   description: "Health Management Organisation Portal",
   manifest: "/manifest.json",
 };

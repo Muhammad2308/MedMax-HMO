@@ -91,7 +91,20 @@ export default function ProvidersPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-                    <div className="relative w-full max-w-lg glass-card p-6 md:p-8 animate-in zoom-in duration-200">
+                    <div
+                        className="relative w-full animate-scale-in p-6 md:p-8"
+                        style={{
+                            // 480px: the standard 512px (32rem) modal width, trimmed by one
+                            // spacing-scale step (2rem/32px). `max-w-lg` never actually applied
+                            // here — it isn't a defined class in this project's globals.css —
+                            // so the modal previously had no width cap at all.
+                            maxWidth: '30rem',
+                            background: '#0f172a',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 'var(--radius-2xl)',
+                            boxShadow: '0 24px 48px -12px rgba(0,0,0,0.7)',
+                        }}
+                    >
                         <h2 className="text-2xl font-bold text-white mb-6">Add New Provider</h2>
                         <div className="space-y-4">
                             <Input label="Provider Name *" placeholder="Enter facility name..." />

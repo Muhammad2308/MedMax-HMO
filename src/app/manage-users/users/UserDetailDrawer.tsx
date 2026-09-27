@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, ChevronDown, ChevronUp, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { useUpdateUser, useDeleteUser, useAssignUserRoles, useRevokeUserRoles } from '@/hooks/useOrgUsers';
+import { useDeleteUser, useAssignUserRoles, useRevokeUserRoles, useSuspendUser, useBlockUser, useActivateUser } from '@/hooks/useOrgUsers';
 import { useOrgRoles } from '@/hooks/useOrgRoles';
 import { getUserPermissions } from '@/api/orgUsers';
 import { useAuth } from '@/context/AuthContext';
@@ -29,6 +29,12 @@ function initials(name: string): string {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
+const STATUS_TONE: Record<AuthUser['status'], { label: string; text: string }> = {
+  active:    { label: 'Active',    text: '#10b981' },
+  suspended: { label: 'Suspended', text: '#f59e0b' },
+  blocked:   { label: 'Blocked',   text: '#ef4444' },
+};
+
 interface Props {
   user: AuthUser;
   onClose: () => void;
@@ -39,10 +45,12 @@ export function UserDetailDrawer({ user, onClose, onEdit }: Props) {
   const { user: me } = useAuth();
   const { toast } = useToast();
   const { data: allRoles = [] } = useOrgRoles();
-  const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   const assignRoles = useAssignUserRoles();
   const revokeRoles = useRevokeUserRoles();
+  const suspendUser = useSuspendUser();
+  const blockUser = useBlockUser();
+  const activateUser = useActivateUser();
 
   const [permOpen, setPermOpen] = useState(false);
   const [perms, setPerms] = useState<Permission[] | null>(null);
@@ -65,11 +73,25 @@ export function UserDetailDrawer({ user, onClose, onEdit }: Props) {
     } catch { /* ignore */ }
   };
 
-  const toggleStatus = async () => {
+  const handleSuspend = async () => {
     try {
-      await updateUser.mutateAsync({ id: user.id, data: { is_approved: !user.is_approved } });
-      toast(user.is_approved ? 'User suspended' : 'User activated', 'success');
-    } catch { toast('Failed to update status.', 'error'); }
+      await suspendUser.mutateAsync(user.id);
+      toast('User suspended', 'success');
+    } catch { toast('Failed to suspend user.', 'error'); }
+  };
+
+  const handleBlock = async () => {
+    try {
+      await blockUser.mutateAsync(user.id);
+      toast('User blocked and active sessions terminated', 'success');
+    } catch { toast('Failed to block user.', 'error'); }
+  };
+
+  const handleActivate = async () => {
+    try {
+      await activateUser.mutateAsync(user.id);
+      toast('User reactivated', 'success');
+    } catch { toast('Failed to activate user.', 'error'); }
   };
 
   const handleRemove = async () => {
@@ -97,6 +119,11 @@ export function UserDetailDrawer({ user, onClose, onEdit }: Props) {
 
   const unassignedRoles = allRoles.filter((r) => !user.roles.some((ur) => ur.id === r.id));
   const isOrgAdmin = me?.is_org_admin;
+  // Mirrors the backend's own guards (OrgUserController::suspend/block) — an HMO
+  // admin can't be suspended/blocked, and nobody can act on their own account.
+  const status = user.status ?? (user.is_approved ? 'active' : 'suspended');
+  const canModerate = isOrgAdmin && !user.is_org_admin && user.id !== me?.id;
+  const statusPending = suspendUser.isPending || blockUser.isPending || activateUser.isPending;
 
   return (
     <>
@@ -128,15 +155,31 @@ export function UserDetailDrawer({ user, onClose, onEdit }: Props) {
             </div>
           </div>
 
-          {/* Status toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-            <div>
+          {/* Status controls */}
+          <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canModerate ? 12 : 0 }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e2e8f0' }}>Account Status</div>
-              <div style={{ fontSize: '0.75rem', color: user.is_approved ? '#10b981' : '#ef4444', marginTop: 2 }}>{user.is_approved ? 'Active' : 'Suspended'}</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: STATUS_TONE[status].text }}>{STATUS_TONE[status].label}</div>
             </div>
-            <button onClick={toggleStatus} disabled={updateUser.isPending} style={{ padding: '6px 16px', borderRadius: 99, border: `1px solid ${user.is_approved ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`, background: user.is_approved ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)', color: user.is_approved ? '#ef4444' : '#10b981', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, opacity: updateUser.isPending ? 0.5 : 1 }}>
-              {user.is_approved ? 'Suspend' : 'Activate'}
-            </button>
+            {canModerate && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {status !== 'active' && (
+                  <button onClick={handleActivate} disabled={statusPending} style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)', color: '#10b981', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, opacity: statusPending ? 0.5 : 1 }}>
+                    Activate
+                  </button>
+                )}
+                {status !== 'suspended' && status !== 'blocked' && (
+                  <button onClick={handleSuspend} disabled={statusPending} style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.08)', color: '#f59e0b', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, opacity: statusPending ? 0.5 : 1 }}>
+                    Suspend
+                  </button>
+                )}
+                {status !== 'blocked' && (
+                  <button onClick={handleBlock} disabled={statusPending} style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, opacity: statusPending ? 0.5 : 1 }}>
+                    Block
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Roles */}

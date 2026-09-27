@@ -1,7 +1,7 @@
 {
-    "name": "MEDX HMO Portal",
-    "short_name": "MEDX HMO",
-    "description": "Health Management Organisation Portal for MEDX",
+    "name": "MEDiX HMO Portal",
+    "short_name": "MEDiX HMO",
+    "description": "Health Management Organisation Portal for MEDiX",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f172a",

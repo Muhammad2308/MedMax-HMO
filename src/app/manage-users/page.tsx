@@ -5,8 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { UserGrid } from './users/UserGrid';
 import { RoleGrid } from './roles/RoleGrid';
 import { PermissionsTable } from './permissions/PermissionsTable';
+import { InvitationsGrid } from './invitations/InvitationsGrid';
 
-type Tab = 'users' | 'roles' | 'permissions';
+type Tab = 'users' | 'roles' | 'permissions' | 'invitations';
 
 export default function ManageUsersPage() {
   const { user, hasOrgPermission } = useAuth();
@@ -28,6 +29,7 @@ export default function ManageUsersPage() {
     { key: 'users', label: 'Users' },
     { key: 'roles', label: 'Roles' },
     { key: 'permissions', label: 'Permissions' },
+    { key: 'invitations', label: 'Invitations' },
   ];
 
   return (
@@ -85,6 +87,7 @@ export default function ManageUsersPage() {
       {activeTab === 'users' && <UserGrid />}
       {activeTab === 'roles' && <RoleGrid />}
       {activeTab === 'permissions' && <PermissionsTable />}
+      {activeTab === 'invitations' && <InvitationsGrid />}
     </div>
   );
 }

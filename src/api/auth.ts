@@ -18,6 +18,7 @@ export interface AuthUser {
   hmo_id: number;
   is_org_admin: boolean;
   is_approved: boolean;
+  status: 'active' | 'suspended' | 'blocked';
   roles: Role[];
 }
 
@@ -34,6 +35,14 @@ export interface RegisterHmoPayload {
   password_confirmation: string;
   device_identifier: string;
   device_name?: string;
+  /** Present when registration was reached via a schema-initiated invite link
+   *  (`/onboarding?invite_token=...`) — backend links the new HMO to the
+   *  inviting schema via `schema_hmos` when this is valid. */
+  invite_token?: string;
+  /** Local installation identity (see src/hooks/useInstallationId.ts) — backend
+   *  writes an `Installation` row when present; harmless if omitted. */
+  installation_uuid?: string;
+  app_version?: string;
 }
 
 export interface HmoInvitePreview {
@@ -80,6 +89,23 @@ export interface StaffActivatePayload {
   device_identifier: string;
 }
 
+export interface VerifyOrgInvitationResult {
+  valid: boolean;
+  email?: string;
+  hmo_name?: string;
+  expires_at?: string;
+  message?: string;
+}
+
+export interface RegisterViaInvitationPayload {
+  token: string;
+  name: string;
+  password: string;
+  password_confirmation: string;
+  device_identifier: string;
+  device_name?: string;
+}
+
 export const verifyDevice = (device_identifier: string) =>
   apiClient.post<{ recognized: boolean }>('/auth/verify-device', { device_identifier });
 
@@ -105,6 +131,14 @@ export const completeHmoInvite = (token: string, data: CompleteInvitePayload) =>
 
 export const registerHmo = (data: RegisterHmoPayload) =>
   apiClient.post<AuthResponse>('/auth/register-hmo', data);
+
+/** HMO staff email invitation — admin-initiated (distinct from the schema/HMO
+ *  org invite pair above; see src/api/orgInvitations.ts for the admin side). */
+export const verifyInvitationToken = (token: string) =>
+  apiClient.get<VerifyOrgInvitationResult>('/auth/invitation/verify', { params: { token } });
+
+export const registerViaInvitation = (data: RegisterViaInvitationPayload) =>
+  apiClient.post<AuthResponse>('/auth/invitation/register', data);
 
 export const loginApi = (email: string, password: string, device_identifier: string) =>
   apiClient.post<AuthResponse & { is_recognized: boolean }>('/auth/login', {
