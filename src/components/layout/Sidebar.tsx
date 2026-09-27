@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, PhoneCall, QrCode, Users,
   CreditCard, Building2, BarChart3, Settings,
-  LogOut, X, UserCog,
+  LogOut, X, UserCog, FileSpreadsheet,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useMenu } from './MenuContext';
@@ -27,6 +27,7 @@ function NavContent({
 
   const canAccessCallCenter = !user || user.is_org_admin || hasOrgPermission('call_center_access');
   const canAccessCodes = !user || user.is_org_admin || hasOrgPermission('operations_access');
+  const canAccessTariffs = !user || user.is_org_admin || hasOrgPermission('operations_access');
   const canAccessVetting = !user || user.is_org_admin || hasOrgPermission('operations_access');
   const canAccessBilling = !user || user.is_org_admin || hasOrgPermission('accounts_access');
   const canAccessReports = !user || user.is_org_admin || hasOrgPermission('accounts_access');
@@ -35,8 +36,10 @@ function NavContent({
   // Grouped per the MedMax UI/UX plan (§9.3 Navigation groups). Only routes
   // that already exist and work are listed here — see
   // docs/MEDMAX_HMO_IMPLEMENTATION_PLAN.md §3 item 7 for why unbuilt modules
-  // (Dependants, Tariffs, Accounts sub-pages, Administration extras, etc.)
-  // are intentionally left out rather than linked as dead pages.
+  // (Dependants, Accounts sub-pages, Administration extras, etc.) are
+  // intentionally left out rather than linked as dead pages. Tariffs (below)
+  // is frontend-complete but calls a backend contract not yet built — see
+  // docs/TARIFF_UPLOAD_API_CONTRACT.md.
   const MENU_GROUPS: { label: string; items: { label: string; icon: typeof LayoutDashboard; href: string; show: boolean }[] }[] = [
     {
       label: 'Overview',
@@ -54,6 +57,12 @@ function NavContent({
       label: 'Network',
       items: [
         { label: 'Providers', icon: Building2, href: '/marketing/providers', show: true },
+      ],
+    },
+    {
+      label: 'Tariffs',
+      items: [
+        { label: 'Tariffs', icon: FileSpreadsheet, href: '/tariffs', show: canAccessTariffs },
       ],
     },
     {

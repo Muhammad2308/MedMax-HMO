@@ -70,12 +70,12 @@ Per the master plan's Antigravity Execution Protocol (§31: small verifiable sta
 - [ ] `npm run lint` passes on all touched files.
 - [ ] This document and `docs/IX2_APP_BACKEND_REQUIREMENTS.md` exist and reflect the audited, not assumed, state of both codebases.
 
-## 5. Next sprint candidates (not started)
+## 5. Next sprint candidates
 
 In backend-dependency order, once the corresponding IX2-App endpoints exist (see companion doc §2 for the priority list):
 
-1. Enrollee import wizard (plan §12) — needs a batch-import endpoint.
-2. Provider invitation flow (plan §14) — `SchemaProviderController`'s invite-token pattern already exists for Schema↔Provider; the same pattern needs an HMO↔Provider equivalent.
-3. Tariff/Schema selection UI for HMO-initiated uploads (plan §13).
+1. ~~Enrollee import wizard (plan §12)~~ — **done.** `src/app/enrollees/ImportEnrolleesModal.tsx`, against a real, working `/hmo/enrollees/import` endpoint.
+2. ~~Provider invitation flow~~ — **done, but a different shape than originally scoped here.** What shipped is a staff email-invitation flow (`src/api/orgInvitations.ts`, `manage-users/invitations/`, `staff-invite/`) against the real `Api\V1\HMO\OrgInvitationController` — i.e. "invite a colleague into this HMO's org", not "HMO invites an HCP provider" (plan §14's `SchemaProviderController`-style HMO↔Provider invite is still not built; don't confuse the two when picking this back up).
+3. **Tariff/Schema selection UI for HMO-initiated uploads (plan §13) — frontend done, backend contract drafted, not yet backend-verified.** `src/app/tariffs/`, `src/api/tariffs.ts`. Full audited contract, real-table findings (including two pre-existing unrelated backend bugs found along the way), and open design questions in `docs/TARIFF_UPLOAD_API_CONTRACT.md`. This is genuinely greenfield on the backend — confirmed zero existing `Api\V1\HMO` routes for services/treatments/drugs — so the page will 404 until that contract is built; it fails visibly (`ErrorState`), not silently.
 4. Accounts module (Reconciliation, Settlements, Wallets) — HCP-side billing tables (`provider_invoices`, `provider_settlements`, `provider_wallets`) already exist in the DB; an HMO-facing read/approval API is the missing piece.
 5. Installation/License administration screens — fully greenfield on both ends.
