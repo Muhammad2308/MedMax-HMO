@@ -3,7 +3,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Activity, ChevronLeft, Clock, Mail, Phone, User, Key, ArrowRight, LogIn } from 'lucide-react';
+import { ChevronLeft, Key, ArrowRight, LogIn } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { staffLookup } from '@/api/auth';
 
 function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -46,39 +49,13 @@ function BackButton({ label, onClick }: { label: string; onClick: () => void }) 
     </button>
   );
 }
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { staffRequest, staffLookup } from '@/api/auth';
 
-type Tab = 'request' | 'token';
-type RequestFields = { name: string; email: string; phone_number: string };
 type TokenFields = { token: string };
 
 export default function StaffTokenPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('request');
-  const [requestDone, setRequestDone] = useState(false);
   const [lookupError, setLookupError] = useState('');
-
-  const rf = useForm<RequestFields>();
   const tf = useForm<TokenFields>();
-
-  const onRequest = rf.handleSubmit(async (data) => {
-    try {
-      await staffRequest({ ...data, org_type: 'hmo' });
-      setRequestDone(true);
-    } catch (err: unknown) {
-      const ax = err as { response?: { status?: number; data?: { errors?: Record<string, string[]>; message?: string } } };
-      if (ax.response?.status === 422 && ax.response.data?.errors) {
-        const errs = ax.response.data.errors;
-        if (errs.name) rf.setError('name', { message: errs.name[0] });
-        if (errs.email) rf.setError('email', { message: errs.email[0] });
-        if (errs.phone_number) rf.setError('phone_number', { message: errs.phone_number[0] });
-      } else {
-        rf.setError('name', { message: ax.response?.data?.message ?? 'Request failed. Try again.' });
-      }
-    }
-  });
 
   const onToken = tf.handleSubmit(async (data) => {
     setLookupError('');
@@ -105,10 +82,8 @@ export default function StaffTokenPage() {
     <>
       <style>{`
         .st-card { padding: 40px; }
-        .st-tab { padding: 11px 0; font-size: 0.92rem; }
         @media (max-width: 560px) {
           .st-card { padding: 24px 20px !important; }
-          .st-tab { padding: 10px 0 !important; font-size: 0.84rem !important; }
           .st-nav { margin-bottom: 28px !important; }
           .st-outer { max-width: 100% !important; }
         }
@@ -147,78 +122,28 @@ export default function StaffTokenPage() {
                 Staff Account Setup
               </h2>
               <p style={{ fontSize: '0.87rem', color: '#475569', lineHeight: 1.5 }}>
-                Request access or enter your SMS activation token to continue.
+                Enter the activation token provided by your HMO administrator or received via SMS.
               </p>
             </div>
 
-            {/* ── Tabs ──────────────────────────────────── */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 32, background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 5 }}>
-              {(['request', 'token'] as Tab[]).map((t) => (
-                <button key={t} type="button" onClick={() => setTab(t)}
-                  className="st-tab"
-                  style={{ flex: 1, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, transition: 'all 200ms ease', background: tab === t ? 'rgba(6,182,212,0.13)' : 'transparent', color: tab === t ? '#06b6d4' : '#475569', boxShadow: tab === t ? '0 0 0 1px rgba(6,182,212,0.28)' : 'none', letterSpacing: '-0.01em' }}
-                >
-                  {t === 'request' ? 'Request Access' : 'I Have My Token'}
-                </button>
-              ))}
-            </div>
+            {/* Direct Token Form */}
+            <form onSubmit={onToken} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <Input
+                label="Activation Token"
+                placeholder="Paste or enter your activation token"
+                leftIcon={<Key size={16} />}
+                autoComplete="off"
+                autoFocus
+                error={tf.formState.errors.token?.message || lookupError || undefined}
+                {...tf.register('token', { required: 'Activation token is required' })}
+              />
 
-            {/* ── Tab A: Request Access ─────────────────── */}
-            {tab === 'request' && (
-              requestDone ? (
-                <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
-                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(6,182,212,0.1)', border: '1.5px solid rgba(6,182,212,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 22px', boxShadow: '0 0 30px rgba(6,182,212,0.12)' }}>
-                    <Clock size={36} color="#06b6d4" />
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#f1f5f9', marginBottom: 10, letterSpacing: '-0.03em' }}>Request submitted!</h3>
-                  <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: 1.65, maxWidth: 320, margin: '0 auto' }}>
-                    Your HMO admin will review your request. You&apos;ll receive an SMS with your activation token once approved.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={onRequest} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <Input label="Full Name" placeholder="e.g. Musa Ibrahim" leftIcon={<User size={16} />}
-                    error={rf.formState.errors.name?.message}
-                    {...rf.register('name', { required: 'Full name is required', minLength: { value: 2, message: 'Too short' } })}
-                  />
-                  <Input label="Email Address" type="email" placeholder="musa@hmo.com" leftIcon={<Mail size={16} />}
-                    error={rf.formState.errors.email?.message}
-                    {...rf.register('email', { required: 'Email is required', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email' } })}
-                  />
-                  <Input label="Phone Number" type="tel" placeholder="08012345678" leftIcon={<Phone size={16} />}
-                    helperText="Your activation token will be sent to this number via SMS"
-                    error={rf.formState.errors.phone_number?.message}
-                    {...rf.register('phone_number', { required: 'Phone number is required' })}
-                  />
-                  <Button type="submit" size="lg" isLoading={rf.formState.isSubmitting} style={{ width: '100%', marginTop: 6, gap: 10, fontSize: '1rem' }}>
-                    {!rf.formState.isSubmitting && (<>Submit Request <ArrowRight size={18} /></>)}
-                    {rf.formState.isSubmitting && 'Submitting…'}
-                  </Button>
-                </form>
-              )
-            )}
+              <Button type="submit" size="lg" isLoading={tf.formState.isSubmitting} style={{ width: '100%', marginTop: 4, gap: 10, fontSize: '1rem' }}>
+                {!tf.formState.isSubmitting && (<>Verify Token <ArrowRight size={18} /></>)}
+                {tf.formState.isSubmitting && 'Verifying…'}
+              </Button>
+            </form>
 
-            {/* ── Tab B: I Have My Token ────────────────── */}
-            {tab === 'token' && (
-              <form onSubmit={onToken} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, marginBottom: 18 }}>
-                    Enter the activation token sent to your phone after your request was approved by your HMO admin.
-                  </p>
-                  <Input
-                    label="Activation Token"
-                    placeholder="Paste the token from your SMS"
-                    leftIcon={<Key size={16} />}
-                    error={tf.formState.errors.token?.message || lookupError || undefined}
-                    {...tf.register('token', { required: 'Token is required' })}
-                  />
-                </div>
-                <Button type="submit" size="lg" isLoading={tf.formState.isSubmitting} style={{ width: '100%', marginTop: 4, gap: 10, fontSize: '1rem' }}>
-                  {!tf.formState.isSubmitting && (<>Verify Token <ArrowRight size={18} /></>)}
-                  {tf.formState.isSubmitting && 'Verifying…'}
-                </Button>
-              </form>
-            )}
           </div>
         </div>
       </div>
