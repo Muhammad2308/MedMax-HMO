@@ -71,7 +71,7 @@ export default function StaffTokenPage() {
         if (org_name) params.set('org', org_name);
         router.push(`/hmo-org-complete?${params.toString()}`);
       } else {
-        router.push(`/staff-otp?token=${encodeURIComponent(t ?? data.token.trim())}`);
+        router.push(`/staff-setpassword?token=${encodeURIComponent(t ?? data.token.trim())}`);
       }
     } catch {
       setLookupError('Token not found or expired.');

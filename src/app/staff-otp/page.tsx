@@ -25,6 +25,13 @@ function StaffOtpContent() {
   const otp = digits.join('');
   const isFull = otp.length === OTP_LENGTH && digits.every((d) => d !== '');
 
+  // Phone verification is suspended — bypass OTP and forward directly to set password
+  useEffect(() => {
+    if (token) {
+      router.replace(`/staff-setpassword?token=${encodeURIComponent(token)}`);
+    }
+  }, [token, router]);
+
   // Focus first box on mount
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -140,10 +147,18 @@ function StaffOtpContent() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <MessageSquare size={24} color="#06b6d4" />
             </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>Verify your phone</h2>
-            <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.6 }}>
-              We sent a 6-digit code to your registered phone number.
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>Staff Verification</h2>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.6, marginBottom: 16 }}>
+              SMS verification is bypassed for testing. Click below to create your password.
             </p>
+            <Button
+              type="button"
+              onClick={() => router.replace(`/staff-setpassword?token=${encodeURIComponent(token)}`)}
+              size="lg"
+              style={{ width: '100%', gap: 8 }}
+            >
+              Continue to Set Password &rarr;
+            </Button>
           </div>
 
           {/* OTP boxes */}
