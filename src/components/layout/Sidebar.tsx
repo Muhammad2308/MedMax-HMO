@@ -6,11 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, PhoneCall, QrCode, Users,
   CreditCard, Building2, BarChart3, Settings,
-  LogOut, X, UserCog, FileSpreadsheet,
+  LogOut, X, UserCog, FileSpreadsheet, ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useMenu } from './MenuContext';
 import { useAuth } from '@/context/AuthContext';
+import { useDeployment } from '@/context/DeploymentContext';
 import { logoutApi } from '@/api/auth';
 
 function NavContent({
@@ -23,12 +24,13 @@ function NavContent({
   showClose?: boolean;
 }) {
   const { user, hasOrgPermission, clearAuth } = useAuth();
+  const { data: deployment } = useDeployment();
   const router = useRouter();
+  const organization = deployment?.organization;
 
   const canAccessCallCenter = !user || user.is_org_admin || hasOrgPermission('call_center_access');
   const canAccessCodes = !user || user.is_org_admin || hasOrgPermission('operations_access');
   const canAccessTariffs = !user || user.is_org_admin || hasOrgPermission('operations_access');
-  const canAccessVetting = !user || user.is_org_admin || hasOrgPermission('operations_access');
   const canAccessBilling = !user || user.is_org_admin || hasOrgPermission('accounts_access');
   const canAccessReports = !user || user.is_org_admin || hasOrgPermission('accounts_access');
   const canManageUsers = !user || user.is_org_admin || hasOrgPermission('manage_users');
@@ -57,6 +59,7 @@ function NavContent({
       label: 'Network',
       items: [
         { label: 'Providers', icon: Building2, href: '/marketing/providers', show: true },
+        { label: 'Informal Sector', icon: ShieldCheck, href: '/schemes', show: canAccessTariffs },
       ],
     },
     {
@@ -112,11 +115,11 @@ function NavContent({
       <div style={{ padding: '24px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 20px rgba(6,182,212,0.3)' }}>
-            <Image src="/logo.png" alt="MEDiX Logo" width={38} height={38} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <Image src={organization?.logo_url || '/logo.png'} alt={`${organization?.short_name || organization?.name || 'MEDiX'} logo`} width={38} height={38} unoptimized style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#f1f5f9', lineHeight: 1.1 }}>MEDiX</div>
-            <div style={{ fontSize: '0.65rem', color: '#475569', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' }}>HMO Portal</div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#f1f5f9', lineHeight: 1.1 }}>{organization?.short_name || organization?.name || 'MEDiX'}</div>
+            <div style={{ fontSize: '0.65rem', color: '#475569', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{organization ? 'Management System' : 'Healthcare Platform'}</div>
           </div>
         </div>
         {showClose && (

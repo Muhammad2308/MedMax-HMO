@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios';
+import { readActivationContext } from './deployment';
 
 /**
  * The new `Api\V1\HMO\*` controllers (Enrollee/CodeRequest/Provider/Marketing/Claims,
@@ -42,9 +43,13 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('hmo_token');
+    const token = typeof window === 'undefined' ? null : localStorage.getItem('hmo_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+    }
+    const activationContext = readActivationContext();
+    if (activationContext) {
+        config.headers['X-MEDiX-Activation-Context'] = activationContext;
     }
     return config;
 });

@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -12,11 +11,22 @@ import { codeRequestsApi } from '@/api/codeRequests';
 import { format } from 'date-fns';
 import { AddRequestPanel } from '@/components/AddRequestPanel';
 
+interface CallCenterRequest {
+    id: string | number;
+    enrollee?: { name?: string } | null;
+    provider?: { name?: string } | null;
+    created_at: string;
+    p_code?: string | null;
+    diagnosis?: string | null;
+    diagnoses?: string | null;
+    code_status: 0 | 1 | 2 | 3 | 9;
+}
+
 export default function CallCenterPage() {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const { data: requests, isLoading } = useQuery({
+    const { data: requests, isLoading } = useQuery<CallCenterRequest[]>({
         queryKey: ['code-requests', { search: searchQuery }],
         queryFn: () => codeRequestsApi.getAll({ search: searchQuery }).then(res => res.data),
     });
@@ -57,7 +67,7 @@ export default function CallCenterPage() {
                         ))}
                     </>
                 ) : (
-                    requests?.map((req: any) => (
+                    requests?.map((req) => (
                         <div
                             key={req.id}
                             style={{
@@ -116,12 +126,13 @@ export default function CallCenterPage() {
                                         {req.p_code || '— PENDING'}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: '#334155', marginTop: '1px' }}>
-                                        {req.diagnoses}
+                                        {req.diagnosis || req.diagnoses}
                                     </div>
                                 </div>
                                 <Badge status={req.code_status} dot>
                                     {req.code_status === 0 ? 'Pending' :
                                      req.code_status === 1 ? 'Granted' :
+                                     req.code_status === 2 ? 'Details Added' :
                                      req.code_status === 3 ? 'Vetted' : 'Declined'}
                                 </Badge>
                                 <ChevronRight size={16} style={{ color: '#334155' }} />
@@ -147,112 +158,7 @@ export default function CallCenterPage() {
                 )}
             </div>
 
-            {/* Side Panel */}
-            {isPanelOpen && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 50,
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                }}>
-                    <div
-                        style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.65)',
-                            backdropFilter: 'blur(4px)',
-                            WebkitBackdropFilter: 'blur(4px)',
-                        }}
-                        onClick={() => setIsPanelOpen(false)}
-                    />
-                    <div
-                        className="animate-slide-right"
-                        style={{
-                            position: 'relative',
-                            width: '100%',
-                            maxWidth: '480px',
-                            height: '100%',
-                            background: '#0f172a',
-                            borderLeft: '1px solid rgba(255,255,255,0.08)',
-                            boxShadow: '-24px 0 64px rgba(0,0,0,0.5)',
-                            padding: '28px 24px',
-                            overflowY: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '20px',
-                        }}
-                    >
-                        {/* Panel header */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                        }}>
-                            <div>
-                                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>
-                                    New Code Request
-                                </h2>
-                                <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
-                                    Issue a pre-authorisation code
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setIsPanelOpen(false)}
-                                aria-label="Close panel"
-                                style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '10px',
-                                    background: 'rgba(255,255,255,0.06)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    color: '#94a3b8',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '1.2rem',
-                                    lineHeight: 1,
-                                    transition: 'all 150ms ease',
-                                }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-                            <Input label="Enrollee ID" placeholder="e.g. ENR-2024-123..." />
-                            <div style={{
-                                padding: '14px 16px',
-                                borderRadius: '12px',
-                                border: '1px dashed rgba(255,255,255,0.08)',
-                                background: 'rgba(255,255,255,0.02)',
-                                fontSize: '0.8rem',
-                                color: '#334155',
-                                fontStyle: 'italic',
-                            }}>
-                                Enter Enrollment ID to auto-load member details and services...
-                            </div>
-                        </div>
-
-                        <div style={{
-                            display: 'flex',
-                            gap: '10px',
-                            paddingTop: '16px',
-                            borderTop: '1px solid rgba(255,255,255,0.06)',
-                        }}>
-                            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setIsPanelOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button style={{ flex: 1 }}>
-                                Create Request
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {isPanelOpen && <AddRequestPanel onClose={() => setIsPanelOpen(false)} />}
         </div>
     );
 }

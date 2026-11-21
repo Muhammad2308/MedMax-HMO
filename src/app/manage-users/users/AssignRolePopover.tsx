@@ -78,9 +78,14 @@ export function AssignRolePopover({ allRoles, selectedRoleIds, onChange, disable
           </div>
         )}
 
-        {/* Dropdown */}
+        {/* Dropdown — deliberately in normal document flow (not position:
+            absolute) so it pushes the rest of the form down within the
+            modal's own scroll area instead of floating on top of the
+            Cancel/Submit buttons that follow it. It stays open across
+            multiple selections (multi-select), so an overlay would keep
+            those buttons covered the whole time a role is being picked. */}
         {open && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: 'rgba(11,17,32,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)', overflow: 'hidden' }}>
+          <div style={{ marginTop: 4, background: 'rgba(11,17,32,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)', overflow: 'hidden' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '6px 10px' }}>
                 <Search size={13} color="#475569" />

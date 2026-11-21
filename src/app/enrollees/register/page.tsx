@@ -8,27 +8,26 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { enrolleesApi } from '@/api/enrollees';
-import { Camera, UserPlus, Users, ChevronRight, ChevronLeft, Upload, Check } from 'lucide-react';
+import { Camera, UserPlus, Users, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 
 export default function RegisterEnrolleePage() {
     const [tab, setTab] = useState<'multi' | 'quick'>('multi');
     const [step, setStep] = useState(1);
-    const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
+    const { register, handleSubmit } = useForm<Record<string, unknown>>();
 
     const mutation = useMutation({
-        mutationFn: (data: any) => enrolleesApi.register(data),
+        mutationFn: (data: Record<string, unknown>) => enrolleesApi.register({
+            ...data,
+            enrollment_id: `ENR${crypto.randomUUID()}`,
+        }),
         onSuccess: () => {
             alert('Enrollee registered successfully!');
             window.location.reload();
         }
     });
 
-    const onSubmit = (data: any) => {
-        mutation.mutate({
-            ...data,
-            enrollment_id: `ENR${Date.now()}`,
-            hmo_id: 1,
-        });
+    const onSubmit = (data: Record<string, unknown>) => {
+        mutation.mutate(data);
     };
 
     const steps = [

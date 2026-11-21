@@ -25,7 +25,8 @@ export const ServiceMultiSelect = ({ schemaId, selectedServices, onChange }: Ser
     });
 
     // Filter services for the specific schema (Mocking the filter logic based on schemaId)
-    const availableServices = schemas?.find((s: any) => s.id === schemaId)?.services || [];
+    const availableServices = (schemas as Array<{ id: string; services?: Service[] }> | undefined)
+        ?.find((s) => s.id === schemaId)?.services || [];
 
     const toggleService = (service: Service) => {
         const isSelected = selectedServices.some(s => s.id === service.id);

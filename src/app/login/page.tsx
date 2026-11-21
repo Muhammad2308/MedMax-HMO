@@ -6,43 +6,66 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Lock, Mail, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getDeviceId } from '@/hooks/useDeviceId';
+import { useDeployment } from '@/context/DeploymentContext';
+import { storeActivationContext } from '@/api/deployment';
+import Link from 'next/link';
 import { loginApi } from '@/api/auth';
+import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 type LoginFields = { email: string; password: string };
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, setTokenAndUser } = useAuth();
+  const { data: deployment, refresh: refreshDeployment } = useDeployment();
+  const organization = deployment?.organization;
+  const organizationName = organization?.short_name || organization?.name || 'MEDiX';
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<LoginFields>();
+  const { register, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } = useForm<LoginFields>();
+
+  const currentEmail = watch('email') || '';
 
   useEffect(() => {
     if (user) router.replace('/');
   }, [user, router]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === 'success') {
+        setResetSuccess(true);
+      }
+    }
+  }, []);
+
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await loginApi(data.email, data.password, getDeviceId());
+      const res = await loginApi(data.email, data.password);
       setTokenAndUser(res.data.token, res.data.user);
+      if (res.data.activation_context) {
+        storeActivationContext(res.data.activation_context);
+        await refreshDeployment();
+      }
       router.replace('/');
     } catch (err: unknown) {
       const ax = err as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } };
       if (ax.response?.status === 401) {
-        setError('email', { message: 'Invalid email or password' });
+        setError('email', { message: 'Invalid username or password' });
         setError('password', { message: ' ' });
       } else if (ax.response?.status === 403) {
-        setError('email', { message: ax.response.data?.message || 'Your account is pending approval or has been suspended.' });
+        setError('email', { message: 'Invalid username or password' });
       } else if (!ax.response) {
         setError('email', { message: 'Cannot reach the server. Check that the backend is running.' });
       } else if (ax.response?.status === 422) {
         const errs = ax.response.data?.errors ?? {};
         if (errs.email) setError('email', { message: errs.email[0] });
         else if (errs.password) setError('password', { message: errs.password[0] });
-        else setError('email', { message: 'Invalid email or password' });
+        else setError('email', { message: 'Invalid username or password' });
       } else {
         setError('email', { message: 'Sign in failed. Please try again.' });
       }
@@ -144,11 +167,12 @@ export default function LoginPage() {
 
             {/* Logo — screen blend dissolves its dark bg into the card */}
             <Image
-              src="/logo.png"
-              alt="MEDiX Portal"
+              src={organization?.logo_url || '/logo.png'}
+              alt={`${organizationName} logo`}
               width={130}
               height={130}
               priority
+              unoptimized
               style={{
                 position: 'relative',
                 zIndex: 2,
@@ -170,10 +194,10 @@ export default function LoginPage() {
             lineHeight: 1.1,
             marginBottom: 6,
           }}>
-            Welcome back
+            Welcome to {organizationName}
           </h1>
           <p style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 500, letterSpacing: '0.01em' }}>
-            Sign in to your HMO portal
+            Sign in to your organization workspace
           </p>
         </div>
 
@@ -182,6 +206,25 @@ export default function LoginPage() {
 
         {/* ── FORM ────────────────────────────────────────── */}
         <div style={{ padding: '28px 40px 36px' }}>
+          {resetSuccess && (
+            <div style={{
+              marginBottom: '18px',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              color: '#34d399',
+              fontSize: '0.82rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              lineHeight: 1.4,
+            }}>
+              <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+              <span>Password reset successfully! Please sign in with your new password.</span>
+            </div>
+          )}
+
           <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Input
               label="Email Address"
@@ -196,27 +239,50 @@ export default function LoginPage() {
               })}
             />
 
-            <Input
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
-              leftIcon={<Lock size={16} />}
-              autoComplete="current-password"
-              error={errors.password?.message?.trim() ? errors.password.message : undefined}
-              rightElement={
+            <div>
+              <Input
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                leftIcon={<Lock size={16} />}
+                autoComplete="current-password"
+                error={errors.password?.message?.trim() ? errors.password.message : undefined}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px', transition: 'color 150ms ease' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#475569'; }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+                {...register('password', { required: 'Password is required' })}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px', transition: 'color 150ms ease' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#475569'; }}
+                  onClick={() => setIsForgotModalOpen(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#38bdf8',
+                    fontSize: '0.78rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    padding: '2px 0',
+                    transition: 'color 150ms ease',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#7dd3fc'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  Forgot password?
                 </button>
-              }
-              {...register('password', { required: 'Password is required' })}
-            />
+              </div>
+            </div>
 
             <Button
               type="submit"
@@ -229,11 +295,25 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>
+          <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.8rem' }}>
+            <Link href="/onboarding" style={{ color: '#67e8f9' }}>New organization? Register here</Link>
+          </p>
+
+          <p style={{ marginTop: '12px', textAlign: 'center', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>
             © 2026 CYBERNET MEDiX · All rights reserved
           </p>
         </div>
       </div>
+
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        defaultEmail={currentEmail}
+        onSuccess={(submittedEmail) => {
+          setValue('email', submittedEmail);
+          setResetSuccess(true);
+        }}
+      />
     </div>
   );
 }

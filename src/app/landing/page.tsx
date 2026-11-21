@@ -5,10 +5,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Building2, KeyRound, LogIn, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useDeployment } from '@/context/DeploymentContext';
 
 export default function LandingPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { data: deployment } = useDeployment();
+  const organization = deployment?.organization;
+  const organizationName = organization?.short_name || organization?.name || 'MEDiX';
 
   useEffect(() => {
     if (user) router.replace('/');
@@ -57,11 +61,12 @@ export default function LandingPage() {
             <div style={{ position: 'relative', marginBottom: 22 }}>
               <div style={{ position: 'absolute', inset: -28, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.22) 0%, transparent 68%)', animation: 'glow-pulse 3.5s ease-in-out infinite', pointerEvents: 'none' }} />
               <Image
-                src="/logo.png"
-                alt="MEDiX"
+                src={organization?.logo_url || '/logo.png'}
+                alt={`${organizationName} logo`}
                 width={112}
                 height={112}
                 priority
+                unoptimized
                 style={{ mixBlendMode: 'screen', filter: 'brightness(1.08) saturate(1.12)', position: 'relative', zIndex: 1 }}
               />
             </div>
@@ -78,10 +83,10 @@ export default function LandingPage() {
               marginBottom: 8,
               textAlign: 'center',
             }}>
-              MEDiX HMO Portal
+              {organizationName}
             </h1>
             <p style={{ fontSize: '0.97rem', color: '#475569', fontWeight: 500, letterSpacing: '0.01em' }}>
-              HMO Administration &amp; Intelligence
+              {organization?.tagline || (organization ? `${organization.name} administration` : 'Health management operations')}
             </p>
           </div>
 

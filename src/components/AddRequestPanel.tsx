@@ -2,96 +2,129 @@
 
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, UserRound } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { EnrolleeSearchInput } from './EnrolleeSearchInput';
-import { ServiceMultiSelect } from './ServiceMultiSelect';
-import { codeRequestsApi } from '@/api/codeRequests';
+import { EnrolleeSearchInput, type Enrollee } from './EnrolleeSearchInput';
+import { TreatmentMultiSelect } from './TreatmentMultiSelect';
+import { codeRequestsApi, type TreatmentCatalogItem } from '@/api/codeRequests';
+
+function getErrorMessage(error: unknown): string {
+    const responseError = error as {
+        response?: { data?: { message?: string; errors?: Record<string, string[]> } };
+        message?: string;
+    };
+    const firstFieldError = responseError.response?.data?.errors
+        ? Object.values(responseError.response.data.errors)[0]?.[0]
+        : undefined;
+    return firstFieldError
+        || responseError.response?.data?.message
+        || responseError.message
+        || 'The request could not be created. Please try again.';
+}
 
 export const AddRequestPanel = ({ onClose }: { onClose: () => void }) => {
     const queryClient = useQueryClient();
-    const [enrollee, setEnrollee] = useState<any>(null);
-    const [selectedServices, setSelectedServices] = useState<any[]>([]);
-    const [paCode, setPaCode] = useState('');
-    const [diagnoses, setDiagnoses] = useState('');
+    const [enrollee, setEnrollee] = useState<Enrollee | null>(null);
+    const [selectedTreatments, setSelectedTreatments] = useState<TreatmentCatalogItem[]>([]);
+    const [diagnosis, setDiagnosis] = useState('');
+    const diagnosisTrimmed = diagnosis.trim();
+    const canSubmit = !!enrollee && diagnosisTrimmed.length >= 3 && selectedTreatments.length > 0;
 
     const mutation = useMutation({
-        mutationFn: (data: any) => codeRequestsApi.create(data),
+        mutationFn: () => codeRequestsApi.create({
+            enrollee_id: (enrollee as Enrollee).id,
+            diagnosis: diagnosisTrimmed,
+            treatment_ids: selectedTreatments.map((treatment) => treatment.id),
+        }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['code-requests'] });
             onClose();
         },
     });
 
-    const handleSubmit = () => {
-        if (!enrollee || !paCode || selectedServices.length === 0) return;
-
-        mutation.mutate({
-            enrollee_id: enrollee.id,
-            p_code: paCode,
-            diagnoses,
-            service_ids: selectedServices.map(s => s.id),
-            hmo_id: 1, // Default for now
-        });
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (canSubmit) mutation.mutate();
     };
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full md:w-[450px] h-full bg-[#0F172A] border-l border-white/10 shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300 flex flex-col">
+            <form
+                onSubmit={handleSubmit}
+                className="relative w-full md:w-[450px] h-full bg-[#0F172A] border-l border-white/10 shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300 flex flex-col"
+            >
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white">Create PA Request</h2>
-                    <Button variant="ghost" size="sm" onClick={onClose}>×</Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Close request panel">×</Button>
                 </div>
 
-                <div className="flex-1 space-y-8">
-                    <EnrolleeSearchInput onSelect={(e) => setEnrollee(e)} />
-
-                    {enrollee && (
-                        <div className="p-4 rounded-xl bg-accent/5 border border-accent/10 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <p className="text-[10px] uppercase font-bold text-accent tracking-widest mb-1">Enrollee Selected</p>
-                            <h3 className="text-white font-semibold">{enrollee.name}</h3>
-                            <p className="text-xs text-slate-400">{enrollee.enrollment_id}</p>
+                <div className="flex-1 space-y-6">
+                    {!enrollee ? (
+                        <EnrolleeSearchInput onSelect={setEnrollee} />
+                    ) : (
+                        <div className="flex items-start justify-between gap-3 p-4 rounded-xl bg-accent/5 border border-accent/10">
+                            <div className="flex items-start gap-3">
+                                <UserRound size={18} className="mt-0.5 text-accent" />
+                                <div>
+                                    <p className="text-sm font-semibold text-white">{enrollee.name}</p>
+                                    <p className="text-xs text-slate-400">{enrollee.enrollment_id}</p>
+                                </div>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setEnrollee(null);
+                                    setSelectedTreatments([]);
+                                }}
+                            >
+                                Change
+                            </Button>
                         </div>
                     )}
 
                     {enrollee && (
-                        <ServiceMultiSelect
-                            schemaId={enrollee.schema_id}
-                            selectedServices={selectedServices}
-                            onChange={setSelectedServices}
-                        />
+                        <>
+                            <Input
+                                label="Diagnosis"
+                                placeholder="e.g. Malaria with fever"
+                                value={diagnosis}
+                                onChange={(event) => setDiagnosis(event.target.value)}
+                                required
+                                minLength={3}
+                            />
+
+                            <TreatmentMultiSelect
+                                enrolleeId={enrollee.id}
+                                selected={selectedTreatments}
+                                onChange={setSelectedTreatments}
+                            />
+                        </>
                     )}
 
-                    <div className="space-y-4 pt-4 border-t border-white/5">
-                        <Input
-                            label="Diagnosis"
-                            placeholder="Enter diagnosis..."
-                            value={diagnoses}
-                            onChange={(e) => setDiagnoses(e.target.value)}
-                        />
-                        <Input
-                            label="Auth (PA) Code"
-                            placeholder="e.g. LAG-482910-KA"
-                            value={paCode}
-                            onChange={(e) => setPaCode(e.target.value)}
-                            required
-                        />
-                    </div>
+                    {mutation.isError && (
+                        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/10 p-3 text-sm text-red-400">
+                            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                            <span>{getErrorMessage(mutation.error)}</span>
+                        </div>
+                    )}
                 </div>
 
-                <div className="pt-8 flex gap-3">
-                    <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+                <div className="pt-6 flex gap-3">
+                    <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
                     <Button
+                        type="submit"
                         className="flex-1"
-                        onClick={handleSubmit}
-                        disabled={!enrollee || !paCode || selectedServices.length === 0}
+                        disabled={!canSubmit}
                         isLoading={mutation.isPending}
                     >
                         Submit Request
                     </Button>
                 </div>
-            </div>
+            </form>
         </div>
     );
 };

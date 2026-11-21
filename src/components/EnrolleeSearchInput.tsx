@@ -5,11 +5,15 @@ import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { enrolleesApi } from '@/api/enrollees';
 
-interface Enrollee {
+export interface Enrollee {
     id: string;
     name: string;
     enrollment_id: string;
     schema_id: string;
+    provider_id?: string | null;
+    is_private?: boolean | number;
+    plan_id?: string | number | null;
+    provider?: { id: number; name: string } | null;
 }
 
 interface EnrolleeSearchInputProps {
@@ -65,7 +69,10 @@ export const EnrolleeSearchInput = ({ onSelect }: EnrolleeSearchInputProps) => {
                             className="p-3 border-b border-white/5 last:border-0 hover:bg-white/10 cursor-pointer transition-all"
                         >
                             <p className="text-sm font-semibold text-white">{enrollee.name}</p>
-                            <p className="text-xs text-slate-500">{enrollee.enrollment_id}</p>
+                            <p className="text-xs text-slate-500">
+                                {enrollee.enrollment_id}
+                                {enrollee.provider?.name && <> &middot; {enrollee.provider.name}</>}
+                            </p>
                         </div>
                     ))}
                 </div>

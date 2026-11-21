@@ -1,119 +1,255 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { EnrolleeSearchInput } from '@/components/EnrolleeSearchInput';
-import { ServiceMultiSelect } from '@/components/ServiceMultiSelect';
-import { codeRequestsApi } from '@/api/codeRequests';
+import { EnrolleeSearchInput, type Enrollee } from '@/components/EnrolleeSearchInput';
+import { TreatmentMultiSelect } from '@/components/TreatmentMultiSelect';
+import { codeRequestsApi, type TreatmentCatalogItem } from '@/api/codeRequests';
 import { providersApi } from '@/api/providers';
-import { Stethoscope, User, Plus, X, Building, ChevronDown } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { Stethoscope, User, X, ExternalLink, AlertTriangle, ArrowRight } from 'lucide-react';
+
+interface ProviderOption {
+    id: number | string;
+    name: string;
+}
+
+function errorMessage(err: unknown): string {
+    const ax = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } }; message?: string };
+    const data = ax.response?.data;
+    const firstFieldError = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
+    return firstFieldError || data?.message || ax.message || 'The code request could not be created. Please try again.';
+}
 
 export default function NewCodeRequestPage() {
     const router = useRouter();
-    const [enrollee, setEnrollee] = useState<any>(null);
-    const [diagnoses, setDiagnoses] = useState('');
-    const [selectedServices, setSelectedServices] = useState<any[]>([]);
-    const [referralProviderId, setReferralProviderId] = useState('');
+    const { toast } = useToast();
 
-    const { data: providers } = useQuery({
+    const [enrollee, setEnrollee] = useState<Enrollee | null>(null);
+    const [diagnosis, setDiagnosis] = useState('');
+    const [diagnosisTouched, setDiagnosisTouched] = useState(false);
+    const [treatments, setTreatments] = useState<TreatmentCatalogItem[]>([]);
+    const [referralProviderId, setReferralProviderId] = useState('');
+    const [referralTreatments, setReferralTreatments] = useState<TreatmentCatalogItem[]>([]);
+
+    const { data: providers = [] } = useQuery<ProviderOption[]>({
         queryKey: ['providers'],
-        queryFn: () => providersApi.getAll().then(res => res.data),
+        queryFn: () => providersApi.getAll().then((res) => (Array.isArray(res.data) ? res.data : [])),
     });
+    // A referral must go to a different provider than the enrollee's own —
+    // enforced again server-side (the source of truth), filtered here only
+    // so the picker doesn't offer a choice the backend will reject anyway.
+    const referralProviderOptions = providers.filter((p) => String(p.id) !== String(enrollee?.provider_id ?? ''));
+
+    const diagnosisTrimmed = diagnosis.trim();
+    const diagnosisError = !diagnosisTouched
+        ? undefined
+        : diagnosisTrimmed.length === 0
+        ? 'Diagnosis is required.'
+        : diagnosisTrimmed.length < 3
+        ? 'Diagnosis must be at least 3 characters.'
+        : undefined;
+
+    const hasReferral = !!referralProviderId && referralTreatments.length > 0;
+    const canSubmit = !!enrollee && diagnosisTrimmed.length >= 3 && (treatments.length > 0 || hasReferral);
 
     const mutation = useMutation({
-        mutationFn: (data: any) => codeRequestsApi.create(data),
-        onSuccess: () => router.push('/manage-codes'),
+        mutationFn: () =>
+            codeRequestsApi.create({
+                enrollee_id: (enrollee as Enrollee).id,
+                diagnosis: diagnosisTrimmed,
+                treatment_ids: treatments.map((t) => t.id),
+                referral_provider_id: hasReferral ? referralProviderId : null,
+                referral_treatment_ids: hasReferral ? referralTreatments.map((t) => t.id) : undefined,
+            }),
+        onSuccess: (res) => {
+            const codes = [res.data?.code_request?.p_code, res.data?.referral_request?.p_code].filter(Boolean);
+            toast(
+                codes.length > 0 ? `Code request created — ${codes.join(' · ')}` : 'Code request created successfully.',
+                'success'
+            );
+            router.push('/manage-codes');
+        },
     });
 
-    const handleSubmit = () => {
-        if (!enrollee || !diagnoses || selectedServices.length === 0) return;
+    const selectEnrollee = (next: Enrollee) => {
+        // Changing the enrollee invalidates any catalog-dependent selections
+        // made for the previous one — clear them rather than carry over
+        // treatment ids that may not apply to the new enrollee's scheme.
+        setEnrollee(next);
+        setTreatments([]);
+        setReferralProviderId('');
+        setReferralTreatments([]);
+    };
 
-        mutation.mutate({
-            enrollee_id: enrollee.id,
-            diagnoses,
-            service_ids: selectedServices.map(s => s.id),
-            referral_provider_id: referralProviderId || null,
-            hmo_id: 1, // Default
-        });
+    const clearEnrollee = () => {
+        setEnrollee(null);
+        setTreatments([]);
+        setReferralProviderId('');
+        setReferralTreatments([]);
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <Header title="Direct Code Request" />
+        <div className="max-w-3xl mx-auto space-y-6 pb-24">
+            <Header title="Direct Code Request" subtitle="Submit a prior-authorisation request on behalf of an enrollee" />
 
             {/* Step 1: Enrollee */}
-            <Card title="1. Identify Enrollee" description="Search for a beneficiary to start the request">
-                <EnrolleeSearchInput onSelect={setEnrollee} />
-                {enrollee && (
-                    <div className="mt-4 p-4 rounded-xl bg-accent/5 border border-accent/10 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
-                        <div>
-                            <p className="text-white font-bold">{enrollee.name}</p>
-                            <p className="text-xs text-slate-500 uppercase tracking-widest">{enrollee.enrollment_id}</p>
+            <Card title="1. Identify Enrollee" description="Search by name or enrollment ID">
+                {!enrollee ? (
+                    <EnrolleeSearchInput onSelect={selectEnrollee} />
+                ) : (
+                    <div className="flex justify-between items-start gap-4 p-4 rounded-xl bg-accent/5 border border-accent/10">
+                        <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+                                <User size={18} />
+                            </div>
+                            <div>
+                                <p className="text-white font-bold">{enrollee.name}</p>
+                                <p className="text-xs text-slate-500 uppercase tracking-widest">{enrollee.enrollment_id}</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Primary provider: {enrollee.provider?.name || <span className="italic text-slate-500">none assigned</span>}
+                                </p>
+                            </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => setEnrollee(null)}><X size={16} /></Button>
+                        <Button variant="ghost" size="sm" onClick={clearEnrollee} aria-label="Change enrollee">
+                            <X size={16} />
+                        </Button>
                     </div>
                 )}
             </Card>
 
-            {/* Step 2: Clinical Details */}
             {enrollee && (
-                <div className="space-y-8 animate-in fade-in fill-mode-both duration-500">
-                    <Card title="2. Clinical Details" description="Enter diagnosis and select services">
-                        <div className="space-y-6">
-                            <Input
-                                label="Diagnosis"
-                                placeholder="e.g. Malaria with associated symptoms..."
-                                leftIcon={<Stethoscope size={18} />}
-                                value={diagnoses}
-                                onChange={(e) => setDiagnoses(e.target.value)}
-                            />
-
-                            <ServiceMultiSelect
-                                schemaId={enrollee.schema_id}
-                                selectedServices={selectedServices}
-                                onChange={setSelectedServices}
-                            />
-                        </div>
+                <>
+                    {/* Step 2: Diagnosis */}
+                    <Card title="2. Diagnosis" description="Required, minimum 3 characters">
+                        <Input
+                            label="Diagnosis"
+                            placeholder="e.g. Malaria with associated symptoms…"
+                            leftIcon={<Stethoscope size={18} />}
+                            value={diagnosis}
+                            onChange={(e) => setDiagnosis(e.target.value)}
+                            onBlur={() => setDiagnosisTouched(true)}
+                            error={diagnosisError}
+                        />
                     </Card>
 
-                    {/* Step 3: Referral (Optional) */}
-                    <Card title="3. Referral (Optional)" description="Select a provider if this is a referral">
+                    {/* Step 3: Treatments */}
+                    <Card title="3. Treatments" description="Select at least one, or provide a referral below">
+                        <TreatmentMultiSelect
+                            enrolleeId={enrollee.id}
+                            selected={treatments}
+                            onChange={setTreatments}
+                            excludeIds={referralTreatments.map((t) => t.id)}
+                        />
+                    </Card>
+
+                    {/* Step 4: Referral (optional) */}
+                    <Card title="4. Referral (Optional)" description="Send this enrollee to another provider for part of this request">
                         <div className="space-y-4">
-                            <div className="relative">
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+                                    Referral Provider
+                                </label>
                                 <select
                                     value={referralProviderId}
-                                    onChange={(e) => setReferralProviderId(e.target.value)}
-                                    className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm"
+                                    onChange={(e) => {
+                                        setReferralProviderId(e.target.value);
+                                        if (!e.target.value) setReferralTreatments([]);
+                                    }}
+                                    style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#f1f5f9', fontSize: '0.875rem', fontFamily: 'inherit' }}
                                 >
-                                    <option value="" className="bg-[#0F172A]">-- Select Referral Provider --</option>
-                                    {providers?.map((p: any) => (
-                                        <option key={p.id} value={p.id} className="bg-[#0F172A]">{p.name}</option>
+                                    <option value="" style={{ color: '#000' }}>— No referral —</option>
+                                    {referralProviderOptions.map((p) => (
+                                        <option key={p.id} value={p.id} style={{ color: '#000' }}>{p.name}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                                    <ChevronDown size={18} />
-                                </div>
+                                <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+                                    Provider not listed?
+                                    <Link href="/marketing/providers" className="text-accent inline-flex items-center gap-1 hover:underline">
+                                        Add it in Provider Management <ExternalLink size={12} />
+                                    </Link>
+                                </p>
                             </div>
+
+                            {referralProviderId && (
+                                <TreatmentMultiSelect
+                                    enrolleeId={enrollee.id}
+                                    selected={referralTreatments}
+                                    onChange={setReferralTreatments}
+                                    label="Referral Treatments"
+                                    excludeIds={treatments.map((t) => t.id)}
+                                />
+                            )}
                         </div>
                     </Card>
 
-                    <div className="flex gap-4 pt-4">
-                        <Button variant="secondary" className="flex-1" onClick={() => router.back()}>Cancel</Button>
-                        <Button
-                            className="flex-1"
-                            onClick={handleSubmit}
-                            disabled={!diagnoses || selectedServices.length === 0}
-                            isLoading={mutation.isPending}
-                        >
-                            Submit Request
-                        </Button>
-                    </div>
-                </div>
+                    {/* Step 5: Review & Submit */}
+                    <Card title="5. Review & Submit">
+                        {mutation.isError && (
+                            <div className="mb-4 flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm">
+                                <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                                <span>{errorMessage(mutation.error)}</span>
+                            </div>
+                        )}
+
+                        <dl className="space-y-3 text-sm mb-6">
+                            <div className="flex justify-between gap-4">
+                                <dt className="text-slate-500">Enrollee</dt>
+                                <dd className="text-white font-medium text-right">{enrollee.name} ({enrollee.enrollment_id})</dd>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <dt className="text-slate-500">Diagnosis</dt>
+                                <dd className="text-white font-medium text-right">{diagnosisTrimmed || '—'}</dd>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <dt className="text-slate-500">Treatments</dt>
+                                <dd className="text-white font-medium text-right">
+                                    {treatments.length > 0 ? treatments.map((t) => t.treatment_title).join(', ') : '—'}
+                                </dd>
+                            </div>
+                            {hasReferral && (
+                                <>
+                                    <div className="flex justify-between gap-4">
+                                        <dt className="text-slate-500">Referral Provider</dt>
+                                        <dd className="text-white font-medium text-right">
+                                            {referralProviderOptions.find((p) => String(p.id) === referralProviderId)?.name}
+                                        </dd>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                        <dt className="text-slate-500">Referral Treatments</dt>
+                                        <dd className="text-white font-medium text-right">
+                                            {referralTreatments.map((t) => t.treatment_title).join(', ')}
+                                        </dd>
+                                    </div>
+                                </>
+                            )}
+                        </dl>
+
+                        {!canSubmit && (
+                            <p className="text-xs text-amber-400 mb-4">
+                                Select at least one treatment, or a referral provider with at least one referral treatment, to continue.
+                            </p>
+                        )}
+
+                        <div className="flex gap-4">
+                            <Button variant="secondary" className="flex-1" onClick={() => router.back()}>Cancel</Button>
+                            <Button
+                                className="flex-1"
+                                onClick={() => mutation.mutate()}
+                                disabled={!canSubmit || mutation.isPending}
+                                isLoading={mutation.isPending}
+                            >
+                                {mutation.isPending ? 'Submitting…' : <>Submit Request <ArrowRight size={16} className="ml-2" /></>}
+                            </Button>
+                        </div>
+                    </Card>
+                </>
             )}
         </div>
     );

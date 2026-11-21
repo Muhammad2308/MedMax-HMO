@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { getInstallationId, APP_VERSION } from '@/hooks/useInstallationId';
 import { verifyDevice, registerHmo } from '@/api/auth';
+import CommercialRegistrationWizard from './CommercialRegistrationWizard';
 
 // ── Password strength helper ─────────────────────────────────
 
@@ -416,8 +417,27 @@ export default function OnboardingPage() {
         </FullScreenMessage>
       }
     >
-      <OnboardingPageInner />
+      <OnboardingRoute />
     </Suspense>
+  );
+}
+
+function OnboardingRoute() {
+  const searchParams = useSearchParams();
+  return searchParams.get('invite_token')
+    ? <InviteRegistrationNotice />
+    : <CommercialRegistrationWizard />;
+}
+
+function InviteRegistrationNotice() {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24, background: '#0b1120', color: '#e2e8f0' }}>
+      <div style={{ width: '100%', maxWidth: 480, padding: 28, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, background: 'rgba(255,255,255,0.03)' }}>
+        <h1 style={{ marginTop: 0 }}>Partner registration needs an updated invitation</h1>
+        <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>This invitation uses an older registration flow. To protect organization identity, new HMO registration now requires verified CAC onboarding. Contact the partner who issued this link for an updated invitation.</p>
+        <Link href="/onboarding" style={{ color: '#67e8f9' }}>Continue without the invitation</Link>
+      </div>
+    </div>
   );
 }
 
